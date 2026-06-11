@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Taller de Mafe | Portal de Artesanos</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                        script: ['Great Vibes', 'cursive'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fbf9f4',
+                            100: '#f5efe4',
+                            200: '#e8d8bd',
+                            300: '#d9bf91',
+                            400: '#d6b06b',
+                            500: '#cca566',
+                            600: '#b08b4a',
+                            700: '#8c6b34',
+                            800: '#6b4f24',
+                            900: '#4a3516',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #fbf9f4; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #fbf9f4; }
+        ::-webkit-scrollbar-thumb { background: #d6b06b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b08b4a; }
+    </style>
+</head>
+<body class="text-brand-900 font-sans min-h-screen flex flex-col">
+
+    <!-- Navegación -->
+    <nav class="glass-panel sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center">
+                    <span class="font-serif font-bold text-4xl text-brand-600 mr-1">T</span>
+                    <span class="font-serif font-bold text-4xl text-brand-600 mr-2">M</span>
+                    <div class="flex flex-col justify-center -space-y-1">
+                        <span class="font-script text-3xl text-brand-700 pt-2">El Taller de Mafe</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4" id="nav-links"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor Principal Dinámico -->
+    <main id="app-content" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="flex justify-center items-center h-64">
+            <i class="fa-solid fa-circle-notch fa-spin text-brand-500 text-4xl"></i>
+        </div>
+    </main>
+
+    <footer class="bg-brand-900 text-brand-100 py-8 mt-auto border-t-[6px] border-brand-500">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="font-script text-3xl mb-2 text-brand-400">"Tienda de Accesorios"</p>
+            <p class="text-sm opacity-70 font-sans tracking-wide">&copy; 2026 El Taller de Mafe. Since 2015.</p>
+        </div>
+    </footer>
+
+    <!-- Widget de Demo -->
+    <div class="fixed bottom-4 left-4 glass-panel p-4 rounded-xl shadow-2xl z-50 border border-brand-200">
+        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">🛠 Panel de Prueba</h4>
+        <div class="flex flex-col space-y-2">
+            <button onclick="setDemoRole('public')" class="text-left text-sm px-3 py-1.5 rounded hover:bg-brand-50 transition"><i class="fa-solid fa-user-circle w-5"></i> Vista Público (Candidato)</button>
+            <button onclick="setDemoRole('artisan')" class="text-left text-sm px-3 py-1.5 rounded hover:bg-brand-50 transition"><i class="fa-solid fa-hammer w-5"></i> Vista Artesano (Aprobado)</button>
+            <button onclick="setDemoRole('admin')" class="text-left text-sm px-3 py-1.5 rounded hover:bg-brand-50 text-brand-600 font-semibold transition"><i class="fa-solid fa-crown w-5"></i> Vista Administrador</button>
+        </div>
+    </div>
+
+    <!-- Modal de Alertas -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex justify-center items-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all">
+            <h3 id="modal-title" class="text-xl font-serif font-bold text-brand-800 mb-2">Mensaje</h3>
+            <p id="modal-message" class="text-gray-600 text-sm mb-6 whitespace-pre-line"></p>
+            <div class="flex justify-end">
+                <button onclick="closeModal()" class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-medium transition">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN DE GOOGLE APPS SCRIPT
+        // ==========================================
+        // Reemplaza esta URL con la que te da Google Apps Script al publicar
+        const SCRIPT_URL = "TU_URL_DE_APPS_SCRIPT_AQUI"; 
+
+        let currentRole = 'public'; 
+        let globalData = { applications: [], videos: [], activities: [] };
+
+        window.onload = () => {
+            renderApp();
+            if(SCRIPT_URL !== "TU_URL_DE_APPS_SCRIPT_AQUI") {
+                fetchAllData(); // Cargar datos reales al iniciar si la URL está configurada
+            }
+        };
+
+        window.showModal = function(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        };
+
+        window.setDemoRole = function(role) {
+            currentRole = role;
+            renderApp();
+            showModal("Cambio de Vista", `Has cambiado a la vista de: ${role === 'admin' ? 'Administrador' : role === 'artisan' ? 'Artesano Aprobado' : 'Candidato Público'}.`);
+        };
+
+        // Función central para comunicarse con Google Sheets
+        async function fetchGAS(action, payload = {}) {
+            if (SCRIPT_URL === "TU_URL_DE_APPS_SCRIPT_AQUI") {
+                return await mockGAS(action, payload); // Simulador si no hay URL configurada
+            }
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, payload }) // Enviar como texto plano para evitar CORS
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("Error contactando a Google Apps Script:", error);
+                throw new Error("No se pudo conectar con la base de datos.");
+            }
+        }
+
+        async function fetchAllData() {
+            try {
+                const data = await fetchGAS("getAllData");
+                if(data.success) {
+                    globalData = data.payload;
+                    if(currentRole === 'admin') loadAdminData();
+                    if(currentRole === 'artisan') loadPortalData();
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        function renderApp() {
+            renderNav();
+            const content = document.getElementById('app-content');
+            
+            if (currentRole === 'public') {
+                content.innerHTML = renderPublicLanding();
+                attachPublicEvents();
+            } else if (currentRole === 'artisan') {
+                content.innerHTML = renderInductionPortal();
+                loadPortalData();
+            } else if (currentRole === 'admin') {
+                content.innerHTML = renderAdminDashboard();
+                loadAdminData();
+            }
+        }
+
+        function renderNav() {
+            const navLinks = document.getElementById('nav-links');
+            if (currentRole === 'public') {
+                navLinks.innerHTML = `<span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full"><i class="fa-solid fa-earth-americas mr-1"></i> Formulario Público</span>`;
+            } else if (currentRole === 'artisan') {
+                navLinks.innerHTML = `<span class="text-sm font-medium text-brand-600 bg-brand-50 border border-brand-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hammer mr-1"></i> Hola, Artesano</span>`;
+            } else if (currentRole === 'admin') {
+                navLinks.innerHTML = `<span class="text-sm font-medium text-white bg-brand-800 px-3 py-1 rounded-full"><i class="fa-solid fa-crown mr-1"></i> Admin Dashboard</span>`;
+            }
+        }
+
+        function renderPublicLanding() {
+            return `
+                <div class="fade-in max-w-4xl mx-auto">
+                    <div class="text-center mb-12">
+                        <h1 class="text-5xl md:text-7xl font-script text-brand-700 mb-2">Únete a Nuestro Taller</h1>
+                        <p class="text-xl font-serif text-brand-600 mb-6 italic">Tienda de Accesorios</p>
+                        <p class="text-base text-gray-700 max-w-2xl mx-auto font-sans leading-relaxed">Buscamos manos apasionadas y mentes creativas. Llena el siguiente formulario para postularte.</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-brand-200">
+                        <div class="bg-brand-500 text-white p-8 text-center relative overflow-hidden">
+                            <h2 class="text-3xl font-serif font-semibold text-brand-50 relative z-10">Formulario de Postulación</h2>
+                            <p class="text-brand-900 font-bold text-sm mt-2 uppercase tracking-widest relative z-10">Queremos conocerte y ver tu talento</p>
+                        </div>
+                        <form id="recruitment-form" class="p-8 space-y-6">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
+                                    <input type="text" id="app-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico *</label>
+                                    <input type="email" id="app-email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp *</label>
+                                    <input type="tel" id="app-phone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none" placeholder="+57 300 0000000">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Enlace a tu trabajo previo (Opcional)</label>
+                                    <input type="url" id="app-portfolio" placeholder="https://" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none">
+                                </div>
+                            </div>
+
+                            <hr class="border-gray-200">
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">1. ¿Tienes experiencia previa en bisutería? *</label>
+                                <textarea id="app-q1" required rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">2. ¿Qué te apasiona de crear con tus manos? *</label>
+                                <textarea id="app-q2" required rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">3. ¿Qué tan abierta/o estás a aprender y recibir consejos? *</label>
+                                <textarea id="app-q3" required rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">4. ¿Por qué te gustaría trabajar con nosotros? *</label>
+                                <textarea id="app-q4" required rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                            </div>
+
+                            <div class="bg-brand-50 p-6 rounded-xl border border-brand-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Jornada *</label>
+                                    <select id="app-availability-type" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                                        <option value="" disabled selected>Selecciona...</option>
+                                        <option value="Completa">Tiempo Completo</option>
+                                        <option value="Media Jornada">Media Jornada</option>
+                                        <option value="Fines de semana">Fines de Semana</option>
+                                        <option value="Flexible">Flexible</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Detalle Horario *</label>
+                                    <input type="text" id="app-availability-details" required placeholder="Ej: Lunes a Viernes tardes" class="w-full px-4 py-2 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                                </div>
+                            </div>
+
+                            <div class="pt-6">
+                                <button type="submit" id="btn-submit-app" class="w-full bg-brand-700 hover:bg-brand-800 text-brand-50 font-bold py-4 px-6 rounded-lg shadow-lg transition transform hover:-translate-y-0.5 uppercase tracking-wider text-sm">
+                                    Enviar Postulación
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attachPublicEvents() {
+            const form = document.getElementById('recruitment-form');
+            if(form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = document.getElementById('btn-submit-app');
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando en Google Sheets...';
+                    btn.disabled = true;
+
+                    const payload = {
+                        name: document.getElementById('app-name').value,
+                        email: document.getElementById('app-email').value,
+                        phone: document.getElementById('app-phone').value,
+                        portfolio: document.getElementById('app-portfolio').value || 'N/A',
+                        q1: document.getElementById('app-q1').value,
+                        q2: document.getElementById('app-q2').value,
+                        q3: document.getElementById('app-q3').value,
+                        q4: document.getElementById('app-q4').value,
+                        availType: document.getElementById('app-availability-type').value,
+                        availDetails: document.getElementById('app-availability-details').value
+                    };
+
+                    try {
+                        const response = await fetchGAS("submitApplication", payload);
+                        
+                        if(response.success) {
+                            showModal('¡Postulación Recibida!', `¡Gracias ${payload.name}!\n\nTu información ha sido guardada en nuestra base de datos. Se te ha enviado un correo de bienvenida automático.`);
+                            form.reset();
+                            if(SCRIPT_URL !== "TU_URL_DE_APPS_SCRIPT_AQUI") fetchAllData();
+                        } else {
+                            throw new Error("Error del servidor");
+                        }
+                    } catch (error) {
+                        showModal('Error', 'Hubo un problema de conexión con Google Sheets. Intenta nuevamente.');
+                    } finally {
+                        btn.innerHTML = 'Enviar Postulación';
+                        btn.disabled = false;
+                    }
+                });
+            }
+        }
+
+        function renderAdminDashboard() {
+            return `
+                <div class="fade-in">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-serif font-bold text-brand-800">Panel de Control de Reclutamiento</h1>
+                        <p class="text-gray-600 mt-1">Conectado a Google Sheets y Gmail Automático.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        <div class="xl:col-span-2 bg-white rounded-xl shadow-md border border-brand-100 p-6">
+                            <h2 class="text-xl font-bold text-brand-700 mb-4"><i class="fa-solid fa-users mr-2"></i> Postulaciones en Google Sheets</h2>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <tbody id="admin-apps-list" class="text-sm divide-y divide-gray-100">
+                                        <tr><td class="text-center py-6 text-gray-400">Cargando datos...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- Agregar Video -->
+                            <div class="bg-white rounded-xl shadow-md border border-brand-100 p-6">
+                                <h2 class="text-lg font-bold text-brand-700 mb-4"><i class="fa-solid fa-video mr-2"></i> Añadir Video de Inducción</h2>
+                                <form onsubmit="adminAddVideo(event)" class="space-y-3">
+                                    <input type="text" id="vid-title" placeholder="Título del Video" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none">
+                                    <input type="url" id="vid-url" placeholder="URL de YouTube" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none">
+                                    <button type="submit" class="w-full bg-brand-800 text-white text-sm font-semibold py-2.5 rounded">Subir Video a Sheets</button>
+                                </form>
+                            </div>
+
+                            <!-- Agregar Actividad -->
+                            <div class="bg-white rounded-xl shadow-md border border-brand-100 p-6">
+                                <h2 class="text-lg font-bold text-brand-700 mb-4"><i class="fa-solid fa-clipboard-list mr-2"></i> Nueva Actividad</h2>
+                                <form onsubmit="adminAddActivity(event)" class="space-y-3">
+                                    <input type="text" id="act-title" placeholder="Título del Ejercicio" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none">
+                                    <textarea id="act-inst" placeholder="Instrucciones..." required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none"></textarea>
+                                    <button type="submit" class="w-full bg-brand-600 text-white text-sm font-semibold py-2.5 rounded">Guardar en Sheets</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadAdminData() {
+            const tbody = document.getElementById('admin-apps-list');
+            if(!tbody) return;
+
+            const apps = [...globalData.applications].reverse();
+
+            if(apps.length === 0){
+                tbody.innerHTML = `<tr><td class="text-center py-8 text-gray-500">No hay postulaciones registradas en tu Google Sheet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = apps.map(app => `
+                <tr class="hover:bg-gray-50 transition flex flex-col md:table-row">
+                    <td class="p-4 align-top w-full md:w-1/3">
+                        <div class="font-bold text-brand-900 text-base">${app.name}</div>
+                        <div class="text-xs text-gray-500 mt-1">${app.email} | ${app.phone}</div>
+                        <div class="mt-2 p-2 bg-brand-100 rounded text-xs">
+                            <span class="font-bold text-brand-800">Disp: ${app.availType}</span><br>${app.availDetails}
+                        </div>
+                    </td>
+                    <td class="p-4 text-xs text-gray-600 align-top w-full md:w-1/2 space-y-2">
+                        <p><strong class="text-brand-800">Aprendizaje:</strong> ${app.q3}</p>
+                        <p><strong class="text-brand-800">Por qué:</strong> ${app.q4}</p>
+                    </td>
+                    <td class="p-4 align-top text-center w-full md:w-1/6">
+                        ${app.status === 'Pendiente' ? `
+                            <button onclick="changeStatus('${app.id}', 'Aprobado')" class="bg-green-600 text-white px-3 py-1 mb-1 rounded text-xs w-full">Aprobar</button>
+                            <button onclick="changeStatus('${app.id}', 'Descartado')" class="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded text-xs w-full">Descartar</button>
+                        ` : `
+                            <span class="px-2 py-1 rounded-full text-xs font-bold ${app.status === 'Aprobado' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}">${app.status}</span>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.changeStatus = async function(id, newStatus) {
+            try {
+                showModal('Actualizando', 'Sincronizando con Google Sheets...');
+                await fetchGAS("updateStatus", { id, status: newStatus });
+                closeModal();
+                
+                // Actualizar localmente para la UI
+                const idx = globalData.applications.findIndex(a => a.id === id);
+                if(idx > -1) globalData.applications[idx].status = newStatus;
+                loadAdminData();
+            } catch (e) {
+                showModal('Error', 'No se pudo actualizar el estado.');
+            }
+        };
+
+        window.adminAddVideo = async function(e) {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('vid-title').value,
+                url: document.getElementById('vid-url').value
+            };
+            const btn = e.target.querySelector('button');
+            btn.innerHTML = "Guardando...";
+            
+            await fetchGAS("addVideo", payload);
+            globalData.videos.push(payload);
+            e.target.reset();
+            btn.innerHTML = "Subir Video a Sheets";
+            showModal('Éxito', 'Video guardado en la hoja de cálculo.');
+        };
+
+        window.adminAddActivity = async function(e) {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('act-title').value,
+                instructions: document.getElementById('act-inst').value
+            };
+            const btn = e.target.querySelector('button');
+            btn.innerHTML = "Guardando...";
+
+            await fetchGAS("addActivity", payload);
+            globalData.activities.push(payload);
+            e.target.reset();
+            btn.innerHTML = "Guardar en Sheets";
+            showModal('Éxito', 'Actividad guardada en la hoja de cálculo.');
+        };
+
+        function renderInductionPortal() {
+            return `
+                <div class="fade-in">
+                    <div class="mb-10">
+                        <h1 class="text-3xl font-serif font-bold text-brand-800">Portal de Inducción</h1>
+                        <p class="text-gray-600 mt-2">Material obtenido desde tu Google Sheets privado.</p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 space-y-6">
+                            <h2 class="text-xl font-bold text-brand-700 border-b border-brand-200 pb-2"><i class="fa-brands fa-youtube text-red-500 mr-2"></i> Videos</h2>
+                            <div id="artisan-videos-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-brand-100">
+                                <h2 class="text-xl font-bold text-brand-700 mb-4">Actividades Asignadas</h2>
+                                <div id="artisan-activities-container" class="space-y-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadPortalData() {
+            const vCont = document.getElementById('artisan-videos-container');
+            const aCont = document.getElementById('artisan-activities-container');
+            if(!vCont || !aCont) return;
+
+            // Render Videos
+            if(globalData.videos.length === 0) {
+                vCont.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">No hay videos en la hoja de Sheets.</div>`;
+            } else {
+                vCont.innerHTML = globalData.videos.map(v => {
+                    const match = v.url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+                    const embedUrl = (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : v.url;
+                    return `
+                    <div class="bg-white rounded-xl shadow-sm border border-brand-100 overflow-hidden">
+                        <div class="aspect-w-16 aspect-h-9 w-full relative pt-[56.25%] bg-gray-100">
+                            <iframe class="absolute top-0 left-0 w-full h-full" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                        <div class="p-4"><h3 class="font-semibold text-gray-800">${v.title}</h3></div>
+                    </div>`
+                }).join('');
+            }
+
+            // Render Actividades
+            if(globalData.activities.length === 0) {
+                aCont.innerHTML = `<p class="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-lg">No hay actividades registradas.</p>`;
+            } else {
+                aCont.innerHTML = globalData.activities.map(a => `
+                    <div class="p-4 bg-brand-50 rounded-lg border border-brand-100">
+                        <h4 class="font-bold text-sm text-brand-800">${a.title}</h4>
+                        <p class="text-xs text-gray-600 mt-1">${a.instructions}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // ==========================================
+        // SIMULADOR LOCAL (Para cuando no hay URL de Apps Script conectada)
+        // ==========================================
+        async function mockGAS(action, payload) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    if(action === "submitApplication") {
+                        payload.id = Date.now().toString();
+                        payload.status = 'Pendiente';
+                        globalData.applications.push(payload);
+                    }
+                    if(action === "addVideo") globalData.videos.push(payload);
+                    if(action === "addActivity") globalData.activities.push(payload);
+                    resolve({success: true, payload: globalData});
+                }, 800);
+            });
+        }
+
+    </script>
+</body>
+</html>
