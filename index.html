@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Taller de Mafe | Portal de Artesanos</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SDK de EmailJS para envío de correos reales -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                        script: ['Great Vibes', 'cursive'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fbf9f4',
+                            100: '#f5efe4',
+                            200: '#e8d8bd',
+                            300: '#d9bf91',
+                            400: '#d6b06b',
+                            500: '#cca566', // Dorado/Mostaza del logo
+                            600: '#b08b4a',
+                            700: '#8c6b34',
+                            800: '#6b4f24',
+                            900: '#4a3516',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #fbf9f4; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #fbf9f4; }
+        ::-webkit-scrollbar-thumb { background: #d6b06b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b08b4a; }
+    </style>
+</head>
+<body class="text-brand-900 font-sans min-h-screen flex flex-col">
+
+    <!-- Navegación -->
+    <nav class="glass-panel sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center">
+                    <span class="font-serif font-bold text-4xl text-brand-600 mr-1">T</span>
+                    <span class="font-serif font-bold text-4xl text-brand-600 mr-2">M</span>
+                    <div class="flex flex-col justify-center -space-y-1">
+                        <span class="font-script text-3xl text-brand-700 pt-2">El Taller de Mafe</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4" id="nav-links">
+                    <!-- Enlaces dinámicos según rol -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor Principal Dinámico -->
+    <main id="app-content" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="flex justify-center items-center h-64">
+            <i class="fa-solid fa-circle-notch fa-spin text-brand-500 text-4xl"></i>
+        </div>
+    </main>
+
+    <footer class="bg-brand-900 text-brand-100 py-8 mt-auto border-t-[6px] border-brand-500">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="font-script text-3xl mb-2 text-brand-400">"Tienda de Accesorios"</p>
+            <p class="text-sm opacity-70 font-sans tracking-wide">&copy; 2026 El Taller de Mafe. Since 2015.</p>
+        </div>
+    </footer>
+
+    <!-- Widget de Demo (Solo para evaluar la app) -->
+    <div class="fixed bottom-4 left-4 glass-panel p-4 rounded-xl shadow-2xl z-50 border border-brand-200">
+        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">🛠 Panel de Prueba (Demo)</h4>
+        <div class="flex flex-col space-y-2">
+            <button onclick="setDemoRole('public')" class="text-left text-sm px-3 py-1.5 rounded hover:bg-brand-50 transition"><i class="fa-solid fa-user-circle w-5"></i> Vista Público (Candidato)</button>
+            <button onclick="setDemoRole('artisan')" class="text-left text-sm px-3 py-1.5 rounded hover:bg-brand-50 transition"><i class="fa-solid fa-hammer w-5"></i> Vista Artesano (Aprobado)</button>
+            <button onclick="setDemoRole('admin')" class="text-left text-sm px-3 py-1.5 rounded hover:bg-brand-50 text-brand-600 font-semibold transition"><i class="fa-solid fa-crown w-5"></i> Vista Administrador</button>
+        </div>
+    </div>
+
+    <!-- Modal de Alertas Personalizado -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex justify-center items-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all">
+            <h3 id="modal-title" class="text-xl font-serif font-bold text-brand-800 mb-2">Mensaje</h3>
+            <p id="modal-message" class="text-gray-600 text-sm mb-6 whitespace-pre-line"></p>
+            <div class="flex justify-end">
+                <button onclick="closeModal()" class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-medium transition">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Simulador de Envío de Correos -->
+    <div id="email-simulation-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[110] hidden overflow-y-auto py-10 px-4">
+        <div class="max-w-4xl mx-auto bg-brand-50 rounded-2xl shadow-2xl border border-brand-300 overflow-hidden my-auto">
+            <div class="bg-brand-800 text-white p-6 flex justify-between items-center border-b-4 border-brand-500">
+                <div>
+                    <h3 class="text-2xl font-serif font-bold"><i class="fa-solid fa-paper-plane mr-2 text-brand-400"></i> Simulación: Envío de Notificaciones por Correo</h3>
+                    <p class="text-xs text-brand-200 mt-1">Así es como funcionan y se verían los correos automatizados de tu plataforma.</p>
+                </div>
+                <button onclick="closeEmailSimulation()" class="text-brand-200 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+            
+            <div class="p-6 space-y-8">
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg text-sm text-amber-900">
+                    <i class="fa-solid fa-circle-info mr-1"></i> <strong>Modo Demostración Activo:</strong> Como aún no has enlazado tus credenciales reales de EmailJS, el sistema ha guardado la postulación en la base de datos y simulado el envío de correos exitosamente.
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Correo 1: Para el Administrador -->
+                    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col">
+                        <div class="bg-gray-100 p-3 border-b border-gray-200 text-xs text-gray-600 font-mono">
+                            <div><strong>Para:</strong> mafe.gerencia@eltaller.com (Tú como Gerente)</div>
+                            <div class="mt-1"><strong>Asunto:</strong> 🚀 Nueva postulación de artesano en El Taller de Mafe</div>
+                        </div>
+                        <div class="p-4 flex-grow text-xs space-y-3 font-sans leading-relaxed text-gray-800">
+                            <p>Hola <strong>Mafe</strong>,</p>
+                            <p>¡Buenas noticias! Tienes una nueva propuesta de artesano interesado en sumarse al equipo de trabajo de tu negocio de accesorios.</p>
+                            <div class="bg-brand-50 p-3 rounded border border-brand-200 space-y-1">
+                                <div><strong>Nombre:</strong> <span id="sim-admin-name"></span></div>
+                                <div><strong>Email:</strong> <span id="sim-admin-email"></span></div>
+                                <div><strong>WhatsApp:</strong> <span id="sim-admin-phone"></span></div>
+                                <div><strong>Disponibilidad:</strong> <span id="sim-admin-availability"></span></div>
+                            </div>
+                            <p><strong>Apertura al aprendizaje del candidato:</strong></p>
+                            <blockquote class="border-l-2 border-brand-500 pl-2 italic text-gray-600 bg-gray-50 p-2 rounded" id="sim-admin-q3"></blockquote>
+                            <p class="pt-2">Ya puedes revisar el portafolio y sus respuestas completas ingresando a tu <strong>Panel de Administrador</strong> en la plataforma para aprobar o declinar su perfil.</p>
+                            <p class="text-right text-[10px] text-gray-400">Enviado automáticamente por Portal El Taller de Mafe.</p>
+                        </div>
+                    </div>
+
+                    <!-- Correo 2: Para el Candidato (Motivador) -->
+                    <div class="bg-white rounded-xl shadow-md border border-brand-200 overflow-hidden flex flex-col">
+                        <div class="bg-brand-500 text-white p-3 text-xs font-mono">
+                            <div><strong>Para:</strong> <span id="sim-cand-to-email"></span> (Candidato)</div>
+                            <div class="mt-1"><strong>Asunto:</strong> ¡Tu talento nos inspira! ✨ Recibimos tu postulación en El Taller de Mafe</div>
+                        </div>
+                        <div class="p-5 flex-grow text-xs space-y-3 font-sans leading-relaxed text-gray-800 relative">
+                            <!-- Logo de agua de fondo -->
+                            <div class="absolute inset-0 flex justify-center items-center opacity-5 pointer-events-none">
+                                <span class="font-serif text-[120px] font-bold">TM</span>
+                            </div>
+                            <p>Hola <strong id="sim-cand-name"></strong>,</p>
+                            <p>¡Qué alegría saludarte! Te escribimos con mucha emoción directamente desde <strong>El Taller de Mafe</strong>.</p>
+                            <p>Queremos confirmarte que hemos recibido con éxito tu postulación para integrarte a nuestro equipo de artesanos. Nos encanta ver personas que, al igual que nosotros, encuentran magia y pasión en la creación de accesorios hechos a mano. Tu dedicación y la maravillosa apertura que nos demuestras para aprender y perfeccionar tu técnica nos inspiran.</p>
+                            <p><strong>¿Qué sigue ahora?</strong></p>
+                            <p>Ya te hemos integrado oficialmente a nuestro <strong>Banco de Talentos Exclusivo</strong>. Mafe, nuestra fundadora, revisará personalmente tus respuestas y portafolio con el cuidado y amor que nos caracteriza.</p>
+                            <p>Si tu perfil se alinea con lo que necesitamos en esta temporada, nos pondremos en contacto contigo vía WhatsApp o Correo para darte acceso al <strong>Portal Privado de Inducción</strong>, donde daremos inicio a tu capacitación con nuestros videos técnicos y ejercicios prácticos.</p>
+                            <p class="font-semibold text-brand-700">¡Gracias por compartir tu brillo y tu arte con nosotros! Sigue creando belleza.</p>
+                            <div class="pt-3 border-t border-gray-100">
+                                <p class="font-script text-2xl text-brand-700">El Taller de Mafe</p>
+                                <p class="text-[10px] text-gray-400">Tienda de Accesorios • Since 2015</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button onclick="closeEmailSimulation()" class="bg-brand-700 hover:bg-brand-800 text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow transition">Continuar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, updateDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variables Globales del Entorno y Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bisuteria-app-mafe-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo", authDomain: "demo", projectId: "demo" 
+        };
+        
+        let app, db, auth;
+        let currentUser = null;
+        let currentRole = 'public'; // 'public', 'artisan', 'admin'
+        
+        let videosData = [];
+        let activitiesData = [];
+        let emailSettings = {
+            serviceId: '',
+            publicKey: '',
+            tempCandidateId: '',
+            tempAdminId: '',
+            configured: false
+        };
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            console.log("Firebase inicializado correctamente.");
+        } catch (e) {
+            console.error("Error inicializando Firebase:", e);
+        }
+
+        window.showModal = function(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        };
+
+        window.closeEmailSimulation = function() {
+            document.getElementById('email-simulation-modal').classList.add('hidden');
+        };
+
+        function getYouTubeEmbedUrl(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11)
+                ? `https://www.youtube.com/embed/${match[2]}`
+                : null;
+        }
+
+        async function initAuth() {
+            try {
+                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (token) {
+                    await signInWithCustomToken(auth, token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        // Cargar primero los ajustes de correo guardados en Firestore
+                        loadEmailSettings().then(() => {
+                            renderApp();
+                        });
+                    }
+                });
+            } catch (error) {
+                console.error("Auth error:", error);
+                renderApp();
+            }
+        }
+
+        async function loadEmailSettings() {
+            if(!auth.currentUser) return;
+            try {
+                const settingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'settings');
+                const snapshot = await getDocs(settingsRef);
+                snapshot.forEach(doc => {
+                    if(doc.id === 'email_config') {
+                        emailSettings = { ...emailSettings, ...doc.data() };
+                    }
+                });
+                
+                if (emailSettings.publicKey && emailSettings.configured) {
+                    emailjs.init(emailSettings.publicKey);
+                    console.log("EmailJS inicializado con llaves reales de base de datos.");
+                }
+            } catch (e) {
+                console.warn("No se pudieron cargar configuraciones de correo:", e);
+            }
+        }
+
+        window.setDemoRole = function(role) {
+            currentRole = role;
+            renderApp();
+            showModal("Cambio de Vista", `Has cambiado a la vista de: ${role === 'admin' ? 'Administrador' : role === 'artisan' ? 'Artesano Aprobado' : 'Candidato Público'}.`);
+        };
+
+        function renderApp() {
+            renderNav();
+            const content = document.getElementById('app-content');
+            
+            if (currentRole === 'public') {
+                content.innerHTML = renderPublicLanding();
+                attachPublicEvents();
+            } else if (currentRole === 'artisan') {
+                content.innerHTML = renderInductionPortal();
+                loadPortalData();
+            } else if (currentRole === 'admin') {
+                content.innerHTML = renderAdminDashboard();
+                loadAdminData();
+            }
+        }
+
+        function renderNav() {
+            const navLinks = document.getElementById('nav-links');
+            let linksHTML = '';
+
+            if (currentRole === 'public') {
+                linksHTML = `<span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full"><i class="fa-solid fa-earth-americas mr-1"></i> Formulario Público</span>`;
+            } else if (currentRole === 'artisan') {
+                linksHTML = `
+                    <span class="text-sm font-medium text-brand-600 bg-brand-50 border border-brand-200 px-3 py-1 rounded-full"><i class="fa-solid fa-hammer mr-1"></i> Hola, Artesano</span>
+                `;
+            } else if (currentRole === 'admin') {
+                linksHTML = `
+                    <span class="text-sm font-medium text-white bg-brand-800 px-3 py-1 rounded-full"><i class="fa-solid fa-crown mr-1"></i> Admin Dashboard</span>
+                `;
+            }
+            navLinks.innerHTML = linksHTML;
+        }
+
+        function renderPublicLanding() {
+            return `
+                <div class="fade-in max-w-4xl mx-auto">
+                    <div class="text-center mb-12">
+                        <h1 class="text-5xl md:text-7xl font-script text-brand-700 mb-2">Únete a Nuestro Taller</h1>
+                        <p class="text-xl font-serif text-brand-600 mb-6 italic">Tienda de Accesorios</p>
+                        <p class="text-base text-gray-700 max-w-2xl mx-auto font-sans leading-relaxed">Buscamos manos apasionadas y mentes creativas. Si amas la bisutería y quieres formar parte de un equipo dedicado al detalle, llena el siguiente formulario.</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-brand-200">
+                        <div class="bg-brand-500 text-white p-8 text-center relative overflow-hidden">
+                            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 10px 10px;"></div>
+                            <h2 class="text-3xl font-serif font-semibold text-brand-50 relative z-10">Formulario de Postulación</h2>
+                            <p class="text-brand-900 font-bold text-sm mt-2 uppercase tracking-widest relative z-10">Queremos conocerte y ver tu talento</p>
+                        </div>
+                        <form id="recruitment-form" class="p-8 space-y-6">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
+                                    <input type="text" id="app-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition bg-brand-50/30">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico *</label>
+                                    <input type="email" id="app-email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition bg-brand-50/30">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp *</label>
+                                    <input type="tel" id="app-phone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition bg-brand-50/30" placeholder="+57 300 0000000">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Enlace a tu trabajo previo (Instagram, Drive, etc.)</label>
+                                    <input type="url" id="app-portfolio" placeholder="https://" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition bg-brand-50/30">
+                                </div>
+                            </div>
+
+                            <hr class="border-gray-200">
+                            
+                            <!-- Pregunta 1: Experiencia -->
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">1. ¿Tienes experiencia previa en bisutería o manualidades? *</label>
+                                <p class="text-xs text-gray-500 mb-2">Detalla qué técnicas conoces (alambrismo, ensartado, macramé, etc.)</p>
+                                <textarea id="app-q1" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Detalla tu nivel de experiencia..."></textarea>
+                            </div>
+
+                            <!-- Pregunta 2: Pasión -->
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">2. Cuéntanos, ¿qué te apasiona de crear con tus manos? *</label>
+                                <p class="text-xs text-gray-500 mb-2">Compártenos qué te motiva y cómo demuestras tu pasión por la confección de accesorios.</p>
+                                <textarea id="app-q2" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Me encanta diseñar porque..."></textarea>
+                            </div>
+
+                            <!-- Pregunta 3: Apertura al Aprendizaje -->
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">3. En nuestro taller aprendemos y mejoramos constantemente. ¿Qué tan abierta/o estás a aprender nuevas técnicas y recibir consejos para perfeccionar tus piezas? *</label>
+                                <p class="text-xs text-gray-500 mb-2">Para nosotros es clave tu disposición para recibir retroalimentación constructiva sobre el acabado y tus deseos de superarte.</p>
+                                <textarea id="app-q3" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Cuéntanos cómo afrontas aprender algo nuevo y los comentarios sobre tu trabajo..."></textarea>
+                            </div>
+
+                            <!-- Pregunta 4: Motivo -->
+                            <div>
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">4. ¿Por qué te gustaría trabajar específicamente con nosotros? *</label>
+                                <p class="text-xs text-gray-500 mb-2">Cuéntanos qué te llama la atención de unirte a El Taller de Mafe.</p>
+                                <textarea id="app-q4" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="Me interesa formar parte de El Taller de Mafe porque..."></textarea>
+                            </div>
+
+                            <!-- Pregunta 5: Disponibilidad de tiempo -->
+                            <div class="bg-brand-50 p-6 rounded-xl border border-brand-200">
+                                <label class="block text-sm font-semibold text-brand-800 mb-1">5. Disponibilidad de Tiempo *</label>
+                                <p class="text-xs text-gray-500 mb-4">Ayúdanos a comprender en qué horarios y de qué forma podrías colaborar con nuestro equipo de trabajo.</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Preferencia de Jornada</label>
+                                        <select id="app-availability-type" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                                            <option value="" disabled selected>Selecciona una opción...</option>
+                                            <option value="Completa (8h diarias)">Tiempo Completo (8h diarias)</option>
+                                            <option value="Media Jornada (4h diarias)">Media Jornada (4h diarias)</option>
+                                            <option value="Solo fines de semana">Solo Fines de Semana</option>
+                                            <option value="Flexible / Por horas">Flexible / Por horas según producción</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Detalle de Horarios / Días libres</label>
+                                        <input type="text" id="app-availability-details" required placeholder="Ej: Lunes a Viernes de 2:00 PM a 6:00 PM" class="w-full px-4 py-2 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-6">
+                                <button type="submit" id="btn-submit-app" class="w-full bg-brand-700 hover:bg-brand-800 text-brand-50 font-bold py-4 px-6 rounded-lg shadow-lg transition transform hover:-translate-y-0.5 flex justify-center items-center uppercase tracking-wider text-sm">
+                                    <span>Enviar Postulación</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attachPublicEvents() {
+            const form = document.getElementById('recruitment-form');
+            if(form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = document.getElementById('btn-submit-app');
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando postulación...';
+                    btn.disabled = true;
+
+                    const nameVal = document.getElementById('app-name').value;
+                    const emailVal = document.getElementById('app-email').value;
+                    const phoneVal = document.getElementById('app-phone').value;
+                    const portfolioVal = document.getElementById('app-portfolio').value;
+                    const q1Val = document.getElementById('app-q1').value;
+                    const q2Val = document.getElementById('app-q2').value;
+                    const q3Val = document.getElementById('app-q3').value;
+                    const q4Val = document.getElementById('app-q4').value;
+                    const availTypeVal = document.getElementById('app-availability-type').value;
+                    const availDetVal = document.getElementById('app-availability-details').value;
+
+                    try {
+                        // 1. Guardar en Base de Datos Firestore
+                        const appData = {
+                            name: nameVal,
+                            email: emailVal,
+                            phone: phoneVal,
+                            portfolio: portfolioVal,
+                            q1_experience: q1Val,
+                            q2_passion: q2Val,
+                            q3_learning: q3Val,
+                            q4_why_us: q4Val,
+                            availability_type: availTypeVal,
+                            availability_details: availDetVal,
+                            status: 'pending',
+                            createdAt: serverTimestamp()
+                        };
+
+                        const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'applications');
+                        await addDoc(appsRef, appData);
+
+                        // 2. Gestionar envío de correos (EmailJS o Simulación)
+                        if (emailSettings.configured && emailSettings.publicKey) {
+                            // Enviar correo real al Administrador
+                            const templateParamsAdmin = {
+                                candidate_name: nameVal,
+                                candidate_email: emailVal,
+                                candidate_phone: phoneVal,
+                                availability: `${availTypeVal} (${availDetVal})`,
+                                q3_learning: q3Val,
+                                portfolio: portfolioVal || 'No especificado'
+                            };
+                            
+                            const templateParamsCand = {
+                                candidate_name: nameVal,
+                                candidate_email: emailVal
+                            };
+
+                            await emailjs.send(emailSettings.serviceId, emailSettings.tempAdminId, templateParamsAdmin);
+                            await emailjs.send(emailSettings.serviceId, emailSettings.tempCandidateId, templateParamsCand);
+                            
+                            showModal('¡Postulación Recibida!', `Muchas gracias, ${nameVal}.\n\nHemos registrado exitosamente tu postulación en la base de datos de El Taller de Mafe.\n\nTe acabamos de enviar un correo electrónico de confirmación de forma automática para darte la bienvenida a nuestro banco de talentos.`);
+                        } else {
+                            // Si no está configurado, mostramos el potente simulador visual interactivo
+                            document.getElementById('sim-admin-name').innerText = nameVal;
+                            document.getElementById('sim-admin-email').innerText = emailVal;
+                            document.getElementById('sim-admin-phone').innerText = phoneVal;
+                            document.getElementById('sim-admin-availability').innerText = `${availTypeVal} - ${availDetVal}`;
+                            document.getElementById('sim-admin-q3').innerText = `"${q3Val}"`;
+                            
+                            document.getElementById('sim-cand-to-email').innerText = emailVal;
+                            document.getElementById('sim-cand-name').innerText = nameVal;
+                            
+                            document.getElementById('email-simulation-modal').classList.remove('hidden');
+                        }
+
+                        form.reset();
+                    } catch (error) {
+                        console.error("Error saving application:", error);
+                        showModal('Error en el Registro', 'Hubo un inconveniente guardando tu perfil en el servidor. Intenta nuevamente.');
+                    } finally {
+                        btn.innerHTML = '<span>Enviar Postulación</span>';
+                        btn.disabled = false;
+                    }
+                });
+            }
+        }
+
+        function renderInductionPortal() {
+            return `
+                <div class="fade-in">
+                    <div class="mb-10">
+                        <h1 class="text-3xl font-serif font-bold text-brand-800">Portal de Inducción</h1>
+                        <p class="text-gray-600 mt-2">Bienvenido/a al equipo de El Taller de Mafe. Aquí encontrarás el material necesario para perfeccionar tus técnicas y realizar ejercicios evaluativos.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        <!-- Columna Principal: Videos -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <h2 class="text-xl font-bold text-brand-700 border-b border-brand-200 pb-2"><i class="fa-brands fa-youtube text-red-500 mr-2"></i> Repositorio de Técnicas (Videos)</h2>
+                            <div id="artisan-videos-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="col-span-full text-center py-10 text-gray-500">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i> Cargando material...
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Secundaria: Actividades -->
+                        <div class="space-y-6">
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-brand-100">
+                                <h2 class="text-xl font-bold text-brand-700 mb-4"><i class="fa-solid fa-list-check mr-2"></i> Actividades Asignadas</h2>
+                                <p class="text-xs text-gray-500 mb-4">Realiza los ejercicios prácticos para que podamos evaluar el avance de tus técnicas y terminaciones.</p>
+                                <div id="artisan-activities-container" class="space-y-4">
+                                     <div class="text-center py-5 text-gray-500 text-sm">Cargando actividades...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadPortalData() {
+            if(!auth.currentUser) return;
+
+            // Cargar Videos
+            const videosRef = collection(db, 'artifacts', appId, 'public', 'data', 'videos');
+            onSnapshot(videosRef, (snapshot) => {
+                const container = document.getElementById('artisan-videos-container');
+                if(!container) return;
+                
+                videosData = [];
+                snapshot.forEach(doc => videosData.push({id: doc.id, ...doc.data()}));
+                
+                if (videosData.length === 0) {
+                    container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">Aún no hay videos de inducción cargados por el administrador.</div>`;
+                    return;
+                }
+
+                container.innerHTML = videosData.map(v => `
+                    <div class="bg-white rounded-xl shadow-sm border border-brand-100 overflow-hidden group">
+                        <div class="aspect-w-16 aspect-h-9 w-full relative pt-[56.25%] bg-gray-100">
+                            <iframe class="absolute top-0 left-0 w-full h-full" src="${v.embedUrl}" title="${v.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-800 line-clamp-1">${v.title}</h3>
+                            <p class="text-xs text-gray-500 mt-1">${v.description || 'Sin descripción adicional'}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }, (error) => { console.error("Error loading videos:", error); });
+
+            // Cargar Actividades
+            const actRef = collection(db, 'artifacts', appId, 'public', 'data', 'activities');
+            onSnapshot(actRef, (snapshot) => {
+                const container = document.getElementById('artisan-activities-container');
+                if(!container) return;
+                
+                let acts = [];
+                snapshot.forEach(doc => acts.push({id: doc.id, ...doc.data()}));
+                
+                if (acts.length === 0) {
+                    container.innerHTML = `<p class="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-lg">No hay actividades ni ejercicios prácticos por el momento.</p>`;
+                    return;
+                }
+
+                container.innerHTML = acts.map(a => `
+                    <div class="p-4 bg-brand-50 rounded-lg border border-brand-100">
+                        <h4 class="font-bold text-sm text-brand-800">${a.title}</h4>
+                        <p class="text-xs text-gray-600 mt-1 mb-3">${a.instructions}</p>
+                        <form onsubmit="submitActivity(event, '${a.id}')" class="flex flex-col space-y-2">
+                            <input type="url" id="submit-url-${a.id}" placeholder="Enlace de tu foto/video (Drive, Insta, etc.)" required class="text-xs px-2 py-1.5 border border-gray-300 rounded bg-white outline-none focus:border-brand-500">
+                            <button type="submit" class="text-xs bg-brand-600 hover:bg-brand-700 text-white py-1.5 rounded font-medium transition">Entregar Ejercicio</button>
+                        </form>
+                    </div>
+                `).join('');
+            });
+        }
+
+        window.submitActivity = function(e, activityId) {
+            e.preventDefault();
+            const url = document.getElementById(`submit-url-${activityId}`).value;
+            showModal("Buen trabajo", "Tu ejercicio práctico ha sido enviado para su revisión.\n\nEn breve analizaremos las terminaciones y el detalle de tu pieza entregada.");
+            e.target.reset();
+        };
+
+        function renderAdminDashboard() {
+            return `
+                <div class="fade-in">
+                    <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 class="text-3xl font-serif font-bold text-brand-800">Panel de Control de Reclutamiento</h1>
+                            <p class="text-gray-600 mt-1">Gestiona candidatos, videos de inducción y ejercicios asignados.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        
+                        <!-- Columna Izquierda: Postulaciones -->
+                        <div class="xl:col-span-2 space-y-6">
+                            <div class="bg-white rounded-xl shadow-md border border-brand-100 p-6">
+                                <h2 class="text-xl font-bold text-brand-700 mb-4"><i class="fa-solid fa-users mr-2"></i> Postulaciones Recibidas</h2>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="bg-brand-50 text-brand-800 text-xs uppercase tracking-wider">
+                                                <th class="p-3 rounded-tl-lg font-semibold">Candidato y Disponibilidad</th>
+                                                <th class="p-3 font-semibold">Respuestas del Cuestionario</th>
+                                                <th class="p-3 rounded-tr-lg text-center font-semibold">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-apps-list" class="text-sm divide-y divide-gray-100">
+                                            <tr><td colspan="3" class="text-center py-6 text-gray-400"><i class="fa-solid fa-spinner fa-spin"></i> Cargando postulaciones...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha: Gestión de Contenido y Ajustes -->
+                        <div class="space-y-6">
+                            
+                            <!-- Ajustes de Notificaciones por Correo -->
+                            <div class="bg-gradient-to-br from-brand-900 to-brand-800 text-brand-100 rounded-xl shadow-lg p-6 border-b-4 border-brand-500">
+                                <h2 class="text-lg font-bold text-brand-400 mb-2"><i class="fa-regular fa-envelope-open mr-2"></i> Ajustes de Correo (EmailJS)</h2>
+                                <p class="text-xs text-brand-200 mb-4 leading-relaxed">Configura el envío real de correos electrónicos en segundos. Déjalos vacíos para usar el simulador visual.</p>
+                                <form id="email-settings-form" onsubmit="saveEmailSettings(event)" class="space-y-3">
+                                    <div>
+                                        <label class="block text-[10px] uppercase font-bold text-brand-300">Service ID</label>
+                                        <input type="text" id="set-service-id" value="${emailSettings.serviceId || ''}" placeholder="Ej: service_xxxxxx" class="w-full px-3 py-1.5 bg-brand-800/50 border border-brand-700 rounded text-xs text-white outline-none focus:border-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] uppercase font-bold text-brand-300">Public Key</label>
+                                        <input type="text" id="set-public-key" value="${emailSettings.publicKey || ''}" placeholder="Ej: user_xxxxxxx" class="w-full px-3 py-1.5 bg-brand-800/50 border border-brand-700 rounded text-xs text-white outline-none focus:border-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] uppercase font-bold text-brand-300">Template ID Candidato</label>
+                                        <input type="text" id="set-temp-cand" value="${emailSettings.tempCandidateId || ''}" placeholder="Plantilla Bienvenida" class="w-full px-3 py-1.5 bg-brand-800/50 border border-brand-700 rounded text-xs text-white outline-none focus:border-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] uppercase font-bold text-brand-300">Template ID Administrador</label>
+                                        <input type="text" id="set-temp-admin" value="${emailSettings.tempAdminId || ''}" placeholder="Plantilla Notificación Mafe" class="w-full px-3 py-1.5 bg-brand-800/50 border border-brand-700 rounded text-xs text-white outline-none focus:border-brand-500">
+                                    </div>
+                                    <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-brand-900 font-bold text-xs py-2 rounded transition mt-2">
+                                        <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Configuración
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Agregar Video -->
+                            <div class="bg-white rounded-xl shadow-md border border-brand-100 p-6">
+                                <h2 class="text-lg font-bold text-brand-700 mb-4"><i class="fa-solid fa-video mr-2"></i> Añadir Video de Inducción</h2>
+                                <form onsubmit="adminAddVideo(event)" class="space-y-3">
+                                    <input type="text" id="vid-title" placeholder="Título del Video (ej: Nudo de Macramé)" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-brand-500">
+                                    <input type="url" id="vid-url" placeholder="URL de YouTube (vía compartir)" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-brand-500">
+                                    <textarea id="vid-desc" placeholder="Breve descripción o técnicas explicadas" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-brand-500"></textarea>
+                                    <button type="submit" class="w-full bg-brand-800 hover:bg-brand-900 text-white text-sm font-semibold py-2.5 rounded transition">Subir Video</button>
+                                </form>
+                            </div>
+
+                            <!-- Agregar Actividad -->
+                            <div class="bg-white rounded-xl shadow-md border border-brand-100 p-6">
+                                <h2 class="text-lg font-bold text-brand-700 mb-4"><i class="fa-solid fa-clipboard-list mr-2"></i> Nueva Actividad / Ejercicio</h2>
+                                <form onsubmit="adminAddActivity(event)" class="space-y-3">
+                                    <input type="text" id="act-title" placeholder="Ej: Ejercicio 1: Alambrismo" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-brand-500">
+                                    <textarea id="act-inst" placeholder="Describe qué materiales deben usar y qué técnica deseas que repliquen..." required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-brand-500"></textarea>
+                                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded transition">Asignar Ejercicio</button>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadAdminData() {
+            if(!auth.currentUser) return;
+
+            // Cargar Postulaciones
+            const appsRef = collection(db, 'artifacts', appId, 'public', 'data', 'applications');
+            onSnapshot(appsRef, (snapshot) => {
+                const tbody = document.getElementById('admin-apps-list');
+                if(!tbody) return;
+
+                let apps = [];
+                snapshot.forEach(doc => apps.push({id: doc.id, ...doc.data()}));
+
+                apps.sort((a, b) => {
+                    const dateA = a.createdAt ? a.createdAt.toDate() : new Date(0);
+                    const dateB = b.createdAt ? b.createdAt.toDate() : new Date(0);
+                    return dateB - dateA; // Más recientes primero
+                });
+
+                if(apps.length === 0){
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-gray-500">No hay postulaciones registradas en el sistema todavía.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = apps.map(app => `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-3 align-top min-w-[220px]">
+                            <div class="font-bold text-brand-900 text-base">${app.name}</div>
+                            <div class="text-xs text-gray-500 mt-1"><i class="fa-regular fa-envelope mr-1"></i> ${app.email}</div>
+                            <div class="text-xs text-gray-500"><i class="fa-brands fa-whatsapp mr-1 text-green-600"></i> ${app.phone}</div>
+                            
+                            <!-- Info de disponibilidad -->
+                            <div class="mt-3 p-2 bg-brand-100 rounded border border-brand-200 text-xs">
+                                <span class="font-bold text-brand-800 block"><i class="fa-regular fa-clock mr-1"></i> ${app.availability_type || 'No especificada'}</span>
+                                <span class="text-gray-600 block text-[11px] mt-0.5">${app.availability_details || 'Sin detalles'}</span>
+                            </div>
+
+                            ${app.portfolio ? `
+                                <a href="${app.portfolio}" target="_blank" class="text-xs text-blue-600 hover:underline mt-2 inline-block font-semibold bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                    <i class="fa-solid fa-link mr-1"></i> Ver Portafolio / Trabajo
+                                </a>
+                            ` : '<div class="text-xs text-gray-400 italic mt-2">Sin portafolio cargado</div>'}
+                        </td>
+                        <td class="p-3 text-xs text-gray-600 align-top space-y-3">
+                            <div>
+                                <span class="font-bold text-brand-800 block">1. Experiencia y técnicas:</span>
+                                <p class="text-gray-700 bg-gray-50 p-2 rounded mt-1 border border-gray-100 leading-relaxed">${app.q1_experience || 'No detallado'}</p>
+                            </div>
+                            <div>
+                                <span class="font-bold text-brand-800 block">2. Qué le apasiona:</span>
+                                <p class="text-gray-700 bg-gray-50 p-2 rounded mt-1 border border-gray-100 leading-relaxed">${app.q2_passion || 'No detallado'}</p>
+                            </div>
+                            <div>
+                                <span class="font-bold text-brand-800 block">3. Apertura al Aprendizaje y Críticas:</span>
+                                <p class="text-brand-900 bg-amber-50 p-2 rounded mt-1 border border-amber-200 font-medium leading-relaxed">${app.q3_learning || 'No especificado'}</p>
+                            </div>
+                            <div>
+                                <span class="font-bold text-brand-800 block">4. Por qué unirse al Taller:</span>
+                                <p class="text-gray-700 bg-gray-50 p-2 rounded mt-1 border border-gray-100 leading-relaxed">${app.q4_why_us || 'No especificado'}</p>
+                            </div>
+                        </td>
+                        <td class="p-3 align-top text-center min-w-[130px]">
+                            <div class="flex flex-col space-y-1 justify-center h-full pt-4">
+                                ${app.status === 'pending' ? `
+                                    <button onclick="simulateApprove('${app.id}')" class="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded text-xs font-semibold shadow transition">Aprobar</button>
+                                    <button onclick="simulateReject('${app.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded text-xs font-semibold border border-red-200 transition">Descartar</button>
+                                ` : `
+                                    <span class="inline-block px-3 py-1.5 rounded-full text-xs font-bold ${app.status === 'approved' ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-gray-100 text-gray-500 border border-gray-300'}">
+                                        ${app.status === 'approved' ? 'Aprobado/a' : 'Descartado/a'}
+                                    </span>
+                                `}
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            });
+        }
+
+        window.saveEmailSettings = async function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = 'Guardando...';
+
+            const serviceId = document.getElementById('set-service-id').value;
+            const publicKey = document.getElementById('set-public-key').value;
+            const tempCandidateId = document.getElementById('set-temp-cand').value;
+            const tempAdminId = document.getElementById('set-temp-admin').value;
+
+            try {
+                const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'email_config');
+                const configData = {
+                    serviceId,
+                    publicKey,
+                    tempCandidateId,
+                    tempAdminId,
+                    configured: (serviceId !== '' && publicKey !== '' && tempCandidateId !== '' && tempAdminId !== '')
+                };
+                
+                await setDoc(configRef, configData);
+                emailSettings = configData;
+                
+                if (emailSettings.configured) {
+                    emailjs.init(emailSettings.publicKey);
+                    showModal('¡Ajustes Guardados!', 'Los ajustes de correo se guardaron exitosamente en la base de datos de Firebase.\n\nLa plataforma ahora enviará correos electrónicos automáticos reales utilizando EmailJS.');
+                } else {
+                    showModal('Ajustes Limpios', 'Se borraron las credenciales de correo. La plataforma regresará al modo demostración con Simulador Visual.');
+                }
+            } catch (err) {
+                console.error(err);
+                showModal('Error', 'No se pudo guardar la configuración de correo.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Configuración';
+            }
+        };
+
+        window.simulateApprove = async function(id) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'applications', id);
+                await updateDoc(docRef, { status: 'approved' });
+                showModal('Artesano Aprobado', 'Se ha cambiado el estado a aprobado exitosamente.\n\nEn un entorno de producción, este paso le permitirá al artesano ingresar a este mismo portal y acceder a la sección privada usando la pestaña de pruebas flotante de abajo.');
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        window.simulateReject = async function(id) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'applications', id);
+                await updateDoc(docRef, { status: 'rejected' });
+                showModal('Postulación Descartada', 'El estado del candidato se ha actualizado a "Descartado/a"');
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        window.adminAddVideo = async function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = 'Subiendo...';
+
+            const title = document.getElementById('vid-title').value;
+            const url = document.getElementById('vid-url').value;
+            const desc = document.getElementById('vid-desc').value;
+
+            const embedUrl = getYouTubeEmbedUrl(url);
+
+            if(!embedUrl) {
+                showModal('Error', 'Por favor ingresa una URL válida de YouTube. Recuerda que debe ser en formato de video estándar o de compartir.');
+                btn.disabled = false;
+                btn.innerHTML = 'Subir Video';
+                return;
+            }
+
+            try {
+                const vidRef = collection(db, 'artifacts', appId, 'public', 'data', 'videos');
+                await addDoc(vidRef, { title, url, embedUrl, description: desc, createdAt: serverTimestamp() });
+                e.target.reset();
+                showModal('Éxito', 'Video de inducción añadido correctamente. Los artesanos con acceso ya pueden visualizarlo en su panel.');
+            } catch (error) {
+                console.error(error);
+                showModal('Error', 'No se pudo guardar el video.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Subir Video';
+            }
+        };
+
+        window.adminAddActivity = async function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = 'Asignando...';
+
+            const title = document.getElementById('act-title').value;
+            const instructions = document.getElementById('act-inst').value;
+
+            try {
+                const actRef = collection(db, 'artifacts', appId, 'public', 'data', 'activities');
+                await addDoc(actRef, { title, instructions, createdAt: serverTimestamp() });
+                e.target.reset();
+                showModal('Éxito', 'Nueva actividad evaluativa asignada a todo el equipo de inducción.');
+            } catch (error) {
+                console.error(error);
+                showModal('Error', 'No se pudo crear la actividad.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Asignar Ejercicio';
+            }
+        };
+
+        window.onload = initAuth;
+
+    </script>
+</body>
+</html>
